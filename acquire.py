@@ -9,7 +9,6 @@ import pysher
 
 # Custom
 import base
-import get_size
 import datetime
 
 # Order inside bids and asks: (price, amount)
@@ -55,7 +54,7 @@ def handleOrderBook (jsonOrderBook):
     orderBookIndex += 1
                 
 def handleConnection (dummyData):
-    channel = pusher.subscribe ('order_book')
+    channel = pusher.subscribe ('order_book_eurusd')
     channel.bind ('data', handleOrderBook)
 
 pusher = pysher.Pusher (appkey)

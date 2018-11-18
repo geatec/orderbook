@@ -64,10 +64,10 @@ for ordFileName in os.listdir (base.orderDir):
         orderBooks = pickle.load (ordFile)
         
         for orderBook in orderBooks:
-            csvFile.write (f'{ordFileName}, {orderBook [0]}, {orderBook [1]}, {orderBook [2]}, , ')
+            csvFile.write (f'{ordFileName}, {orderBook [0]}, {orderBook [1]}, {orderBook [2]}, {orderBook [3]}, , ')
             
-            bids = sorted (orderBook [3], key = lambda element: element [0])
-            asks = sorted (orderBook [4], key = lambda element: element [0])
+            bids = sorted (orderBook [4], key = lambda element: element [0])
+            asks = sorted (orderBook [5], key = lambda element: element [0])
             
             lowest = 0
             highest = -1

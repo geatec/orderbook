@@ -1,83 +1,67 @@
-import ccxt
+# Standard
+import sys
 import time
-import datetime
 import pickle
-import copy
 import json
 
+# Installed
+import pysher
+
+# Custom
 import base
 import get_size
+import datetime
 
 # Order inside bids and asks: (price, amount)
 
-#print (ccxt.exchanges)
-exchange = ccxt.bitstamp ({'enableRateLimit': True})
-
-books = []
-oldTimeStamp = 0
+appkey = 'de504dc5763aeef9ff52'
 nrOfOrderBooksPerFile = 8
+orderBookIndex = nrOfOrderBooksPerFile
+pickleFile = None
+binaryOrderBooks = None
 
-newTime = datetime.datetime.now ()
-# asciiOrderBook = None
+def handleOrderBook (jsonOrderBook):
+    global orderBookIndex
+    global pickleFile
+    global binaryOrderBooks
 
-while True:
-    pickleFileName = f'orderbooks_y{newTime.year%100:02}m{newTime.month:02}d{newTime.day:02}h{newTime.hour:02}m{newTime.minute:02}s{newTime.second:02}.ord'
-    print ('File:', pickleFileName)
+    asciiOrderBook = json.loads (jsonOrderBook)
     
-    pickleFilePath = f'{base.orderDir}/{pickleFileName}'
-    
-    with open (pickleFilePath, 'wb') as pickleFile:
+    if orderBookIndex == nrOfOrderBooksPerFile:
+        try:
+            pickle.dump (binaryOrderBooks, pickleFile)
+            pickleFile.close ()
+        except:
+            pass
+        
+        orderBookIndex = 0
         binaryOrderBooks = []
         
-        while True:
-            oldTime = newTime
-            newTime = datetime.datetime.now ()
-            deltaTime = newTime - oldTime
-            deltaSeconds = deltaTime.total_seconds ()
+        aNow = datetime.datetime.now ()
+        pickleFileName = f'orderbooks_y{aNow.year%100:02}m{aNow.month:02}d{aNow.day:02}_h{aNow.hour:02}m{aNow.minute:02}s{aNow.second:02}.ord'
+        pickleFilePath = f'{base.orderDir}/{pickleFileName}'
+        pickleFile = open (pickleFilePath, 'wb')
+        print ('\nFile:', pickleFileName)
+    
+    binaryOrderBooks.append ([
+        orderBookIndex,
+        datetime.datetime.now (),
+        asciiOrderBook ['timestamp'],
+        [(float (bid [0]), float (bid [1])) for bid in asciiOrderBook ['bids']],
+        [(float (ask [0]), float (ask [1])) for ask in asciiOrderBook ['asks']]
+    ])
+        
+    print ('Orderbook:', orderBookIndex)     
+    orderBookIndex += 1
+                
+def handleConnection (dummyData):
+    channel = pusher.subscribe ('order_book')
+    channel.bind ('data', handleOrderBook)
 
-            if deltaSeconds:
-                print (round (deltaSeconds, 2))      
-                if deltaSeconds > 2:
-                    print ('Timeout!!!')
-            
-            try:    
-                # oldAsciiOrderBook = copy.deepcopy (asciiOrderBook)
-                
-                asciiOrderBook = exchange.fetch_order_book ('EUR/USD')
-                
-                '''
-                if json.dumps (asciiOrderBook) == json.dumps (oldAsciiOrderBook):
-                    print (json.dumps (asciiOrderBook))
-                    print ('Seen before')
-                '''
-                
-                # print (orderBook.keys ())
-                # print (get_size.get_size (orderBook))
-                # print (orderBook)
-                
-                timeStamp = asciiOrderBook ['timestamp']
-                
-                if timeStamp != oldTimeStamp:
-                    oldTimeStamp = timeStamp
-                    
-                    orderBookSubIndex = len (binaryOrderBooks)
-                    
-                    if orderBookSubIndex < nrOfOrderBooksPerFile:
-                        print ('Orderbook subindex', orderBookSubIndex)
-                        
-                        binaryOrderBooks.append ([
-                            orderBookSubIndex,
-                            timeStamp,
-                            asciiOrderBook ['datetime'],
-                            asciiOrderBook ['nonce'],
-                            [(float (bid [0]), float (bid [1])) for bid in asciiOrderBook ['bids']],
-                            [(float (ask [0]), float (ask [1])) for ask in asciiOrderBook ['asks']]
-                        ])
-                    else:
-                        break;
-            except Exception as exception:
-                print (exception)
-                
-            time.sleep (0.1)
-            
-        pickle.dump (binaryOrderBooks, pickleFile)
+pusher = pysher.Pusher (appkey)
+pusher.connection.bind ('pusher:connection_established', handleConnection)
+pusher.connect ()
+
+while True:
+    time.sleep(0.5)
+    

@@ -19,7 +19,6 @@ for each row:
     best bid (highest value)
     amount best bid (highest value)
     .
-    @
     .
     best ask (lowest value)
     amount best ask (lowest value)
@@ -39,7 +38,6 @@ maxNrOfBids = maxNrOfAsks = 500
 value, amount = 0, 1
 
 oldDay = 0
-csvFile = None
 
 for ordFileName in os.listdir (base.orderDir):
     ordFileName = ordFileName.replace ('\\', '/');  # Make portable for Windows, Linux and OsX

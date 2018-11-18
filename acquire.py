@@ -20,6 +20,8 @@ pickleFile = None
 binaryOrderBooks = None
 
 def handleOrderBook (jsonOrderBook):
+    aNow = datetime.datetime.now ()
+
     global orderBookIndex
     global pickleFile
     global binaryOrderBooks
@@ -36,7 +38,6 @@ def handleOrderBook (jsonOrderBook):
         orderBookIndex = 0
         binaryOrderBooks = []
         
-        aNow = datetime.datetime.now ()
         pickleFileName = f'orderbooks_y{aNow.year%100:02}m{aNow.month:02}d{aNow.day:02}_h{aNow.hour:02}m{aNow.minute:02}s{aNow.second:02}.ord'
         pickleFilePath = f'{base.orderDir}/{pickleFileName}'
         pickleFile = open (pickleFilePath, 'wb')
@@ -44,7 +45,7 @@ def handleOrderBook (jsonOrderBook):
     
     binaryOrderBooks.append ([
         orderBookIndex,
-        datetime.datetime.now (),
+        aNow,
         asciiOrderBook ['timestamp'],
         [(float (bid [0]), float (bid [1])) for bid in asciiOrderBook ['bids']],
         [(float (ask [0]), float (ask [1])) for ask in asciiOrderBook ['asks']]
@@ -62,5 +63,5 @@ pusher.connection.bind ('pusher:connection_established', handleConnection)
 pusher.connect ()
 
 while True:
-    time.sleep(0.5)
+    time.sleep (0.5)
     
